@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Waveshare Modbus Relay B",
+        "description": "Connect to the board over Modbus TCP.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "scan_interval": "Scan interval (seconds)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This board is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Scan interval (seconds)"
+        }
+      }
+    }
+  }
+}
