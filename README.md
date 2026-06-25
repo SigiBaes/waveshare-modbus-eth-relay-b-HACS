@@ -2,11 +2,13 @@
 
 A [HACS](https://hacs.xyz/) custom integration for the **Waveshare Modbus POE ETH Relay (B)** board. This board exposes 8 digital inputs and 8 relay outputs, communicated with over **Modbus TCP**.
 
+This assumes the board has been setup using the [unfortunately Windows only software from Waveshare](https://www.waveshare.com/wiki/Modbus_POE_ETH_Relay_(B)?srsltid=AfmBOoorFDiB3OOl3PYBpNywF2-0d743o0mcKD34BLKNJPC2Z7j-8hCw). Configured to RTU over TCP on Port 502.
+
 ## Why This Integration?
 
 Home Assistant's built-in Modbus integration polls each entity with a separate network request. With 8 inputs and 8 relays that means up to 16 round-trips per poll cycle.
 
-This integration reads all 8 inputs in **one** Modbus request and all 8 relays in **one** Modbus request — two requests per poll cycle regardless of how many entities are in use. No MQTT broker, no external daemon, no additional services. It uses `local_polling` via [pymodbus](https://github.com/pymodbus-dev/pymodbus) and communicates directly with the board over your local network.
+This integration reads all 8 inputs in **one** Modbus request and all 8 relays in **one** Modbus request — two requests per poll cycle regardless of how many entities are in use. No MQTT broker, no external daemon, no additional services. It uses `local_polling` via [pymodbus](https://github.com/pymodbus-dev/pymodbus) and communicates directly with the board over your local network. When trying to use inputs for responsive interaction (PID, door open, etc.) polling at 1 s or faster is needed.
 
 ## Installation via HACS
 
