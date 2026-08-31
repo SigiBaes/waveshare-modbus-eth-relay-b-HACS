@@ -20,6 +20,7 @@ from .relay_write import (
     clamp_scan_interval_ms,
     flush_mailbox,
     poll_board,
+    poll_data_after_failed_restore,
     poll_stagger_ms,
     should_restore_after_poll,
     should_skip_poll,
@@ -95,7 +96,15 @@ class WaveshareCoordinator(DataUpdateCoordinator[dict[str, list[bool]]]):
                 if not restore:
                     self._force_restore = False
                     return data
-                repaired = await self._flush()
+                try:
+                    repaired = await self._flush()
+                except (ModbusException, ConnectionError, RelayIoError) as err:
+                    _LOGGER.warning(
+                        "%s: relay restore failed (%s); publishing poll data",
+                        self._host,
+                        err,
+                    )
+                    return poll_data_after_failed_restore(data)
                 self._force_restore = False
         except (ModbusException, ConnectionError, RelayIoError) as err:
             raise UpdateFailed(f"Modbus poll failed: {err}") from err

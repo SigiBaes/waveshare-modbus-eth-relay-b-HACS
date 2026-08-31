@@ -131,6 +131,15 @@ def should_restore_after_poll(
     return force_restore or restore_on_mismatch
 
 
+def poll_data_after_failed_restore(
+    poll_data: dict[str, list[bool]],
+) -> dict[str, list[bool]]:
+    return {
+        "inputs": list(poll_data["inputs"]),
+        "relays": list(poll_data["relays"]),
+    }
+
+
 def parse_set_relays_payload(data: dict) -> list[bool]:
     if "states" in data:
         if any(name in data for name in RELAY_FIELD_NAMES):

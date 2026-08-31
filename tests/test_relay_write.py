@@ -4,6 +4,7 @@ import zlib
 
 import pytest
 
+from custom_components.waveshare_relay_b import relay_write
 from custom_components.waveshare_relay_b.relay_write import (
     RelayIoError,
     RelayMailbox,
@@ -319,6 +320,21 @@ def test_should_restore_after_poll():
     assert should_restore_after_poll(
         force_restore=True, restore_on_mismatch=True, mismatch=False
     ) is False
+
+
+def test_poll_data_after_failed_restore_copies_poll_bits():
+    poll_data = {
+        "inputs": [True, False, True, False, True, False, True, False],
+        "relays": [False, True, False, True, False, True, False, True],
+    }
+    publish = getattr(relay_write, "poll_data_after_failed_restore", None)
+    assert callable(publish)
+
+    published = publish(poll_data)
+
+    assert published == poll_data
+    assert published["inputs"] is not poll_data["inputs"]
+    assert published["relays"] is not poll_data["relays"]
 
 
 @pytest.mark.asyncio
