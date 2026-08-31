@@ -5,14 +5,22 @@ from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 
 DOMAIN = "waveshare_relay_b"
 
-# Config keys
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_RESTORE_ON_MISMATCH = "restore_on_mismatch"
+CONF_OPTIMISTIC = "optimistic"
 
-# Defaults / fixed values
 DEFAULT_PORT = 502
-UNIT_ID = 1  # board Modbus address is fixed; not user-configurable
-DEFAULT_SCAN_INTERVAL = 5
+UNIT_ID = 1
+DEFAULT_SCAN_INTERVAL = 300
+LEGACY_DEFAULT_SCAN_INTERVAL_S = 5
+MIN_SCAN_INTERVAL_MS = 50
+MAX_SCAN_INTERVAL_MS = 60_000
 CHANNELS = 8
+SERVICE_SET_RELAYS = "set_relays"
+DEFAULT_RESTORE_ON_MISMATCH = True
+DEFAULT_OPTIMISTIC = False
+MODBUS_TIMEOUT = 1
+CONFIG_VERSION = 2
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SWITCH]
 
@@ -21,9 +29,19 @@ __all__ = [
     "CONF_HOST",
     "CONF_PORT",
     "CONF_SCAN_INTERVAL",
+    "CONF_RESTORE_ON_MISMATCH",
+    "CONF_OPTIMISTIC",
     "DEFAULT_PORT",
     "UNIT_ID",
     "DEFAULT_SCAN_INTERVAL",
+    "LEGACY_DEFAULT_SCAN_INTERVAL_S",
+    "MIN_SCAN_INTERVAL_MS",
+    "MAX_SCAN_INTERVAL_MS",
     "CHANNELS",
+    "SERVICE_SET_RELAYS",
+    "DEFAULT_RESTORE_ON_MISMATCH",
+    "DEFAULT_OPTIMISTIC",
+    "MODBUS_TIMEOUT",
+    "CONFIG_VERSION",
     "PLATFORMS",
 ]
