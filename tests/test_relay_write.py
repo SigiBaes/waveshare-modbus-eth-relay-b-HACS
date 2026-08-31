@@ -11,6 +11,7 @@ from custom_components.waveshare_relay_b.relay_write import (
     clamp_scan_interval_ms,
     flush_mailbox,
     migrate_scan_interval_from_v1,
+    normalize_device_ids,
     parse_set_relays_payload,
     poll_board,
     poll_stagger_ms,
@@ -81,6 +82,22 @@ def test_require_channel_bits_rejects_wrong_length():
 def test_require_channel_bits_rejects_non_bool():
     with pytest.raises(ValueError, match="booleans"):
         require_channel_bits([1, 0, 0, 0, 0, 0, 0, 0])  # type: ignore[list-item]
+
+
+def test_normalize_device_ids_scalar_string():
+    assert normalize_device_ids("device-1") == ["device-1"]
+
+
+def test_normalize_device_ids_copies_list():
+    device_ids = ["device-1", "device-2"]
+    normalized = normalize_device_ids(device_ids)
+    assert normalized == device_ids
+    assert normalized is not device_ids
+
+
+@pytest.mark.parametrize("value", [None, "", []])
+def test_normalize_device_ids_empty_values(value):
+    assert normalize_device_ids(value) == []
 
 
 @pytest.mark.asyncio
