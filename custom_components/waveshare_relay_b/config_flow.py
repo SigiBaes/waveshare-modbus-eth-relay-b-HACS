@@ -15,17 +15,24 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 
 from .const import (
+    CONFIG_VERSION,
+    CONF_OPTIMISTIC,
+    CONF_RESTORE_ON_MISMATCH,
     CONF_SCAN_INTERVAL,
+    DEFAULT_OPTIMISTIC,
     DEFAULT_PORT,
+    DEFAULT_RESTORE_ON_MISMATCH,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_SCAN_INTERVAL_MS,
+    MIN_SCAN_INTERVAL_MS,
 )
 
 
 class WaveshareConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the initial setup."""
 
-    VERSION = 1
+    VERSION = CONFIG_VERSION
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -49,7 +56,10 @@ class WaveshareConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(
                     CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
-                ): int,
+                ): vol.All(
+                    int,
+                    vol.Range(min=MIN_SCAN_INTERVAL_MS, max=MAX_SCAN_INTERVAL_MS),
+                ),
             }
         )
         return self.async_show_form(
@@ -65,7 +75,7 @@ class WaveshareConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class WaveshareOptionsFlow(OptionsFlow):
-    """Edit the scan interval after setup."""
+    """Edit poll interval and write behaviour after setup."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -73,10 +83,27 @@ class WaveshareOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current = self.config_entry.options.get(
+        current_scan = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
         schema = vol.Schema(
-            {vol.Required(CONF_SCAN_INTERVAL, default=current): int}
+            {
+                vol.Required(CONF_SCAN_INTERVAL, default=current_scan): vol.All(
+                    int,
+                    vol.Range(min=MIN_SCAN_INTERVAL_MS, max=MAX_SCAN_INTERVAL_MS),
+                ),
+                vol.Required(
+                    CONF_RESTORE_ON_MISMATCH,
+                    default=self.config_entry.options.get(
+                        CONF_RESTORE_ON_MISMATCH, DEFAULT_RESTORE_ON_MISMATCH
+                    ),
+                ): bool,
+                vol.Required(
+                    CONF_OPTIMISTIC,
+                    default=self.config_entry.options.get(
+                        CONF_OPTIMISTIC, DEFAULT_OPTIMISTIC
+                    ),
+                ): bool,
+            }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

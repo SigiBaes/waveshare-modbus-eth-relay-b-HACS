@@ -1,0 +1,55 @@
+set_relays:
+  name: Set all relays
+  description: Write all eight relay coils in one Modbus request.
+  target:
+    device:
+      integration: waveshare_relay_b
+  fields:
+    relay_1:
+      name: Relay 1
+      description: Channel 1
+      required: true
+      selector:
+        boolean:
+    relay_2:
+      name: Relay 2
+      description: Channel 2
+      required: true
+      selector:
+        boolean:
+    relay_3:
+      name: Relay 3
+      description: Channel 3
+      required: true
+      selector:
+        boolean:
+    relay_4:
+      name: Relay 4
+      description: Channel 4
+      required: true
+      selector:
+        boolean:
+    relay_5:
+      name: Relay 5
+      description: Channel 5
+      required: true
+      selector:
+        boolean:
+    relay_6:
+      name: Relay 6
+      description: Channel 6
+      required: true
+      selector:
+        boolean:
+    relay_7:
+      name: Relay 7
+      description: Channel 7
+      required: true
+      selector:
+        boolean:
+    relay_8:
+      name: Relay 8
+      description: Channel 8
+      required: true
+      selector:
+        boolean:

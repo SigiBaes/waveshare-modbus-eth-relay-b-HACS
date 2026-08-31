@@ -7,6 +7,52 @@
         "data": {
           "host": "Host",
           "port": "Port",
+          "scan_interval": "Scan interval (milliseconds)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This board is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Scan interval (milliseconds)",
+          "restore_on_mismatch": "Restore commanded relays if the board disagrees",
+          "optimistic": "Optimistic dashboard switches (flip before the board confirms)"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_relays": {
+      "name": "Set all relays",
+      "description": "Write all eight relay coils in one Modbus request.",
+      "fields": {
+        "relay_1": { "name": "Relay 1", "description": "Channel 1" },
+        "relay_2": { "name": "Relay 2", "description": "Channel 2" },
+        "relay_3": { "name": "Relay 3", "description": "Channel 3" },
+        "relay_4": { "name": "Relay 4", "description": "Channel 4" },
+        "relay_5": { "name": "Relay 5", "description": "Channel 5" },
+        "relay_6": { "name": "Relay 6", "description": "Channel 6" },
+        "relay_7": { "name": "Relay 7", "description": "Channel 7" },
+        "relay_8": { "name": "Relay 8", "description": "Channel 8" }
+      }
+    }
+  }
+}
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Waveshare Modbus Relay B",
+        "description": "Connect to the board over Modbus TCP.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
           "scan_interval": "Scan interval (seconds)"
         }
       }
