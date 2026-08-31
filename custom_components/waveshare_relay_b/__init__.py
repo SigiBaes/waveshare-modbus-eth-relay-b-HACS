@@ -38,6 +38,7 @@ from .coordinator import WaveshareConfigEntry, WaveshareCoordinator
 from .relay_write import (
     RELAY_FIELD_NAMES,
     migrate_scan_interval_from_v1,
+    normalize_device_ids,
     parse_set_relays_payload,
 )
 
@@ -64,11 +65,10 @@ def _register_services(hass: HomeAssistant) -> None:
             bits = parse_set_relays_payload(dict(call.data))
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
-        device_ids = list(call.target.get("device_id") or []) or list(
-            call.data.get("device_id") or []
+        target_device_ids = normalize_device_ids(call.target.get("device_id"))
+        device_ids = target_device_ids or normalize_device_ids(
+            call.data.get("device_id")
         )
-        if isinstance(device_ids, str):
-            device_ids = [device_ids]
         if not device_ids:
             raise ServiceValidationError("Select a Waveshare Relay B device")
         registry = dr.async_get(hass)

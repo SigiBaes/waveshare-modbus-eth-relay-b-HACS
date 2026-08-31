@@ -88,6 +88,15 @@ MAX_SCAN_INTERVAL_MS = 60_000
 LEGACY_SECONDS_MAX = 60
 
 
+def normalize_device_ids(value: str | Sequence[str] | None) -> list[str]:
+    """Normalize a service target or payload device-id value."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value else []
+    return list(value)
+
+
 def clamp_scan_interval_ms(value: int) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ValueError("scan_interval must be a positive integer")
