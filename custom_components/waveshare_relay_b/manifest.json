@@ -1,12 +1,12 @@
 {
   "domain": "waveshare_relay_b",
   "name": "Waveshare Modbus Relay B",
-  "codeowners": ["@sacherjj"],
+  "codeowners": ["@sacherjj", "@SigiBaes"],
   "config_flow": true,
-  "documentation": "https://github.com/sacherjj/waveshare-modbus-eth-relay-b-HACS",
+  "documentation": "https://github.com/SigiBaes/waveshare-modbus-eth-relay-b-HACS",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/sacherjj/waveshare-modbus-eth-relay-b-HACS/issues",
+  "issue_tracker": "https://github.com/SigiBaes/waveshare-modbus-eth-relay-b-HACS/issues",
   "requirements": ["pymodbus>=3.11.2"],
-  "version": "0.1.2"
+  "version": "0.2.0"
 }
