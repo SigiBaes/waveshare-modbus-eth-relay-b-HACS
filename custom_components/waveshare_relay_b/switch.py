@@ -35,6 +35,7 @@ class WaveshareRelay(CoordinatorEntity[WaveshareCoordinator], SwitchEntity):
     ) -> None:
         super().__init__(coordinator)
         self._index = index
+        self._attr_assumed_state = coordinator.optimistic
         self._attr_unique_id = f"{entry_id}_relay_{channel_number(index)}"
         self._attr_name = f"Relay {channel_number(index)}"
         self._attr_device_info = DeviceInfo(
