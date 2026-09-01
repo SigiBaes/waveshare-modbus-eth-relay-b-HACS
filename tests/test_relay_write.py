@@ -10,6 +10,7 @@ from custom_components.waveshare_relay_b.relay_write import (
     RelayMailbox,
     RelayMismatchError,
     clamp_scan_interval_ms,
+    device_ids_from_service_call,
     flush_mailbox,
     migrate_scan_interval_from_v1,
     normalize_device_ids,
@@ -99,6 +100,22 @@ def test_normalize_device_ids_copies_list():
 @pytest.mark.parametrize("value", [None, "", []])
 def test_normalize_device_ids_empty_values(value):
     assert normalize_device_ids(value) == []
+
+
+def test_device_ids_from_service_call_uses_data_when_target_is_missing():
+    """ServiceCall has no .target; HA merges websocket target into call.data."""
+    assert device_ids_from_service_call({"device_id": "device-1"}, None) == ["device-1"]
+
+
+def test_device_ids_from_service_call_prefers_explicit_target():
+    assert device_ids_from_service_call(
+        {"device_id": "from-data"},
+        {"device_id": "from-target"},
+    ) == ["from-target"]
+
+
+def test_device_ids_from_service_call_ignores_non_dict_target():
+    assert device_ids_from_service_call({"device_id": "device-1"}, object()) == ["device-1"]
 
 
 @pytest.mark.asyncio

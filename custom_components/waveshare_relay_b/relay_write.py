@@ -97,6 +97,19 @@ def normalize_device_ids(value: str | Sequence[str] | None) -> list[str]:
     return list(value)
 
 
+def device_ids_from_service_call(data: dict, target: object | None = None) -> list[str]:
+    """Resolve device ids the way HA actually delivers them.
+
+    ``ServiceCall`` has no ``.target`` attribute. Websocket ``target.device_id``
+    is merged into ``call.data`` by ``hass.services.async_call``. An explicit
+    target dict (if a future HA version exposes one) still wins.
+    """
+    from_target = normalize_device_ids(
+        target.get("device_id") if isinstance(target, dict) else None
+    )
+    return from_target or normalize_device_ids(data.get("device_id"))
+
+
 def clamp_scan_interval_ms(value: int) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ValueError("scan_interval must be a positive integer")

@@ -27,7 +27,7 @@
 - One extra attempt (`attempts=2`) on `RelayIoError` / connection / pymodbus errors, in **`retry_io` only**. Do not wrap `flush_mailbox` in a second `retry_io` in the coordinator. **Never retry `RelayMismatchError`.**
 - pymodbus client: `timeout=1`, `retries=0`, `reconnect_delay=0`. The library defaults (`retries=3`, auto-reconnect backoff up to 300 s) would stack with our retry and hide dead boards. Fail fast; our layer retries once.
 - After push, tag GitHub **`v0.2.0`** so HACS can pin/roll back. Do not rely on `main` alone.
-- `set_relays` uses a **simple** voluptuous schema (optional `device_id` + eight booleans **or** `states`). Do not use `make_entity_service_schema`. Device selection comes from `call.target["device_id"]` (Actions UI / `target.device_id`) and falls back to `call.data["device_id"]`. Register with `supports_response=SupportsResponse.OPTIONAL` and return confirmed bits.
+- `set_relays` uses a **simple** voluptuous schema (optional `device_id` + eight booleans **or** `states`). Do not use `make_entity_service_schema`. Device selection uses `device_ids_from_service_call`: Home Assistant **does not** put a `.target` on `ServiceCall` (Bugbot's 2026-08-31 note was wrong about the API). Websocket `target.device_id` is merged into `call.data`; read that, and `getattr(call, "target", None)` if a future HA exposes it. Register with `supports_response=SupportsResponse.OPTIONAL` and return confirmed bits.
 - Lovelace switches remain the primary UI for single-channel toggles. Developer Tools → Actions is the full-word UI. Both paths use the same mailbox + FC15 flush.
 - Tests stay HA-free. Do not import `coordinator.py` or `__init__.py` from pytest.
 - pymodbus requirement stays `pymodbus>=3.11.2`. HA floor stays `2024.6.0`.
@@ -887,7 +887,7 @@ Coordinator wiring (must match the file below):
 4. Stagger sleep **outside** the lock. Skip poll via `should_skip_poll`. Restore via `should_restore_after_poll` then `_flush`.
 5. `_flush` calls `flush_mailbox` only. **Do not** call `retry_io` here. If a pymodbus exception still escapes, map it to `UpdateFailed` — retry already happened inside `write_coils_confirmed` → `retry_io`. Clear `_force_restore` only after a successful restore or an explicit decision not to restore. Pass `mismatch=` into `should_restore_after_poll` so a matching poll does not call `_flush`.
 6. Do not call `async_request_refresh()` after a write.
-7. Service schema is the simple voluptuous block (`device_id` optional). Resolve devices from `call.target` first, then `call.data`. Do **not** call `make_entity_service_schema`.
+7. Service schema is the simple voluptuous block (`device_id` optional). Resolve devices with `device_ids_from_service_call(call.data, getattr(call, "target", None))`. Do **not** call `call.target.get` (ServiceCall has no `.target`). Do **not** call `make_entity_service_schema`.
 8. `supports_response=SupportsResponse.OPTIONAL`.
 
 Task 3 pytest stays HA-free. Add the coordinator composition tests in Task 2 (`should_restore_after_poll(..., mismatch=)`). After wiring, run pytest + the `write_coil` grep, then tick the HIL checklist in Step 4 — green `tests/` is not proof of skip-poll, migrate, or action response.
@@ -1109,11 +1109,10 @@ def _register_services(hass: HomeAssistant) -> None:
             bits = parse_set_relays_payload(dict(call.data))
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
-        device_ids = list(call.target.get("device_id") or []) or list(
-            call.data.get("device_id") or []
+        device_ids = device_ids_from_service_call(
+            dict(call.data),
+            getattr(call, "target", None),
         )
-        if isinstance(device_ids, str):
-            device_ids = [device_ids]
         if not device_ids:
             raise ServiceValidationError("Select a Waveshare Relay B device")
         registry = dr.async_get(hass)
@@ -1733,6 +1732,6 @@ If work happened on a feature branch, merge to `main` first, then push. Do not f
 
 **Type consistency:** `async_set_relays` / `async_set_relay` return `list[bool]`; action response `relays: list[{device_id, states}]`; `flush_mailbox` → `list[bool] | None`; `should_skip_poll` / `should_restore_after_poll(*, mismatch=)` are keyword-only; `clamp_scan_interval_ms` vs `migrate_scan_interval_from_v1`; form `vol.Range` uses the same 50–60000 bounds.
 
-**Review follow-up (2026-08-31):** pymodbus-shaped client errors wrap to `RelayIoError` inside `write_coils_confirmed` so `retry_io` sees them; coordinator `_flush` does not call `retry_io`; restore helper requires `mismatch=` (Produces line included); config/options forms clamp scan ms; grep uses word-boundary `write_coil`; Task 3 HIL checklist is required. `set_relays` reads `call.target["device_id"]` then `call.data["device_id"]`. Do not push `main` until the user asks.
+**Review follow-up (2026-08-31):** pymodbus-shaped client errors wrap to `RelayIoError` inside `write_coils_confirmed` so `retry_io` sees them; coordinator `_flush` does not call `retry_io`; restore helper requires `mismatch=` (Produces line included); config/options forms clamp scan ms; grep uses word-boundary `write_coil`; Task 3 HIL checklist is required. **2026-09-01:** Bugbot asked for `call.target["device_id"]`, but `ServiceCall` has no `.target` — HA merges websocket target into `call.data`. Use `device_ids_from_service_call`. Do not push `main` until the user asks.
 
 **Not in this repo:** EVW `aux-writer.ts` changes. README plant contract is the handoff. Installing this fork via HACS custom repositories replaces the stock `sacherjj` URL; updating the stock repo would drop these changes.
