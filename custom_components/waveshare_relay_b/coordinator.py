@@ -67,10 +67,21 @@ class WaveshareCoordinator(DataUpdateCoordinator[dict[str, list[bool]]]):
             await self.client.connect()
             self._force_restore = True
 
+    async def _recover_transport(self) -> None:
+        self.client.close()
+        await self.client.connect()
+        self._force_restore = True
+
     async def _flush(self) -> list[bool] | None:
         try:
-            return await flush_mailbox(self._mailbox, self.client, device_id=UNIT_ID)
+            return await flush_mailbox(
+                self._mailbox,
+                self.client,
+                device_id=UNIT_ID,
+                on_retry=self._recover_transport,
+            )
         except (ModbusException, ConnectionError) as err:
+            self.client.close()
             raise RelayIoError(str(err)) from err
 
     async def _async_update_data(self) -> dict[str, list[bool]]:
@@ -107,6 +118,7 @@ class WaveshareCoordinator(DataUpdateCoordinator[dict[str, list[bool]]]):
                     return poll_data_after_failed_restore(data)
                 self._force_restore = False
         except (ModbusException, ConnectionError, RelayIoError) as err:
+            self.client.close()
             raise UpdateFailed(f"Modbus poll failed: {err}") from err
         if repaired is not None:
             _LOGGER.warning(
@@ -126,17 +138,18 @@ class WaveshareCoordinator(DataUpdateCoordinator[dict[str, list[bool]]]):
                 bits = self._mailbox.desired_copy()
                 if bits is None:
                     raise RuntimeError("relay mailbox has no hardware baseline yet")
-                if confirmed is not None:
-                    inputs = (
-                        list(self.data["inputs"])
-                        if self.data is not None
-                        else [False] * CHANNELS
-                    )
-                    self.async_set_updated_data({"inputs": inputs, "relays": confirmed})
+                inputs = (
+                    list(self.data["inputs"])
+                    if self.data is not None
+                    else [False] * CHANNELS
+                )
+                relays = confirmed if confirmed is not None else bits
+                self.async_set_updated_data({"inputs": inputs, "relays": relays})
                 return bits
         except RuntimeError as err:
             raise UpdateFailed("no hardware baseline yet") from err
         except (ModbusException, ConnectionError, RelayIoError) as err:
+            self.client.close()
             raise UpdateFailed(f"Modbus write failed: {err}") from err
         finally:
             self._commands_in_flight -= 1

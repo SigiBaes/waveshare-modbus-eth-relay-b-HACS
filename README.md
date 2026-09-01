@@ -71,7 +71,7 @@ Every relay change is:
 
 Single-coil `write_coil` (FC05) is not used.
 
-Action **Set all relays** (`waveshare_relay_b.set_relays`): eight checkboxes in Developer Tools → Actions, or a `states` list of 8 booleans for automations/plants. **0.2.1:** targeting uses `device_id` from service data (Home Assistant merges websocket `target` into `call.data`; `ServiceCall` has no `.target`). Actions UI `target.device` still works. On success the action returns:
+Action **Set all relays** (`waveshare_relay_b.set_relays`): eight checkboxes in Developer Tools → Actions, or a `states` list of 8 booleans for automations/plants. **0.2.1:** targeting uses `device_id` from service data (Home Assistant merges websocket `target` into `call.data`; `ServiceCall` has no `.target`). Actions UI `target.device` still works. **0.2.2:** after idle, a half-open TCP socket is closed and reconnected on the first IO retry so entities update from the write confirm instead of a later poll. On success the action returns:
 
 ```json
 {"relays": [{"device_id": "<ha-device-id>", "states": [false, false, true, false, false, false, false, false]}]}

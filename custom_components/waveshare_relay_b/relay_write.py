@@ -38,16 +38,21 @@ def require_channel_bits(
 
 
 async def retry_io(
-    op: Callable[[], Awaitable[T]], *, attempts: int = DEFAULT_IO_ATTEMPTS
+    op: Callable[[], Awaitable[T]],
+    *,
+    attempts: int = DEFAULT_IO_ATTEMPTS,
+    on_retry: Callable[[], Awaitable[None]] | None = None,
 ) -> T:
     last: BaseException | None = None
-    for _ in range(attempts):
+    for i in range(attempts):
         try:
             return await op()
         except RelayMismatchError:
             raise
         except RelayIoError as err:
             last = err
+            if i + 1 < attempts and on_retry is not None:
+                await on_retry()
     assert last is not None
     raise last
 
@@ -220,7 +225,11 @@ async def poll_board(
 
 
 async def flush_mailbox(
-    mailbox: RelayMailbox, client, *, device_id: int = 1
+    mailbox: RelayMailbox,
+    client,
+    *,
+    device_id: int = 1,
+    on_retry: Callable[[], Awaitable[None]] | None = None,
 ) -> list[bool] | None:
     desired = mailbox.desired_copy()
     if desired is None:
@@ -231,6 +240,6 @@ async def flush_mailbox(
     async def _once() -> list[bool]:
         return await write_coils_confirmed(client, desired, device_id=device_id)
 
-    confirmed = await retry_io(_once)
+    confirmed = await retry_io(_once, on_retry=on_retry)
     mailbox.observe_hardware(confirmed)
     return confirmed

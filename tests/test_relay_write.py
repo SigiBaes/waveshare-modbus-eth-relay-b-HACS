@@ -213,6 +213,42 @@ async def test_retry_io_exhausts_attempts_and_reraises():
     assert attempts["n"] == 2
 
 
+@pytest.mark.asyncio
+async def test_retry_io_runs_on_retry_between_attempts():
+    attempts = {"n": 0}
+    retries = {"n": 0}
+
+    async def op():
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RelayIoError("stale socket")
+        return "ok"
+
+    async def on_retry():
+        retries["n"] += 1
+
+    assert await retry_io(op, attempts=2, on_retry=on_retry) == "ok"
+    assert attempts["n"] == 2
+    assert retries["n"] == 1
+
+
+@pytest.mark.asyncio
+async def test_flush_mailbox_recovers_stale_socket_via_on_retry():
+    board = FakeBoard()
+    board.write_error = True
+    box = RelayMailbox()
+    box.adopt_if_empty([False] * 8)
+    box.set_bit(0, True)
+
+    async def on_retry():
+        board.write_error = False
+
+    result = await flush_mailbox(box, board, on_retry=on_retry)
+    expected = [True, False, False, False, False, False, False, False]
+    assert result == expected
+    assert [c[0] for c in board.calls] == ["write_coils", "write_coils", "read_coils"]
+
+
 def test_mailbox_adopt_if_empty_does_not_overwrite():
     box = RelayMailbox()
     bits = [True] + [False] * 7
