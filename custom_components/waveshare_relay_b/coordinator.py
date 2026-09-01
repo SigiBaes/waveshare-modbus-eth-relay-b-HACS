@@ -17,6 +17,7 @@ from .const import CHANNELS, DOMAIN, UNIT_ID
 from .relay_write import (
     RelayIoError,
     RelayMailbox,
+    RelayMismatchError,
     clamp_scan_interval_ms,
     flush_mailbox,
     poll_board,
@@ -148,6 +149,8 @@ class WaveshareCoordinator(DataUpdateCoordinator[dict[str, list[bool]]]):
                 return bits
         except RuntimeError as err:
             raise UpdateFailed("no hardware baseline yet") from err
+        except RelayMismatchError as err:
+            raise UpdateFailed(f"Modbus write failed: {err}") from err
         except (ModbusException, ConnectionError, RelayIoError) as err:
             self.client.close()
             raise UpdateFailed(f"Modbus write failed: {err}") from err
